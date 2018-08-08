@@ -1,6 +1,6 @@
 import React from 'react';
 import Number from './number';
-import sampleSize from 'loadash';
+import sampleSize from 'lodash';
 
 const randomNumberBetween = (min, max) =>
 	Math.floor(Math.random() * (max - min + 1)) + min;
@@ -12,6 +12,7 @@ export default class Game extends React.Component {
 
 	constructor(props) {
 		super(props);
+		this.timeout = null;
 		this.state = {
 			directionsText: `You will have 10 seconds to click the ${props.answerSize} correct numbers once you click Start`,
 			sum: 0,
@@ -23,7 +24,7 @@ export default class Game extends React.Component {
 				}
 			}),
 			target: sampleSize(this.challengeNumbers, props.challengeSize - 2).reduce((acc,curr) => {
-				acc + curr;
+				return acc + curr;
 			}, 0)
 		}
 	}
@@ -42,9 +43,14 @@ export default class Game extends React.Component {
 			this.setState({clickCount});
 			let buttonsState = this.state.buttonsState.slice();
 			buttonsState[btnIndex].isClicked = true;
-			this.state.sum += buttonsState[btnIndex].val;
-
 			this.setState({buttonsState});
+			let sum  = this.state.sum + buttonsState[btnIndex].val;
+			if (sum === this.state.target) {
+				clearInterval(this.timeout);
+				this.setState({directionsText: 'Woot!. You win mate'});
+			} else {
+				this.setState({sum});
+			}
 		}
 	}
 
@@ -52,11 +58,11 @@ export default class Game extends React.Component {
 	onStart() {
 		this.setState({directionsText: `You will have 10 seconds to click the ${this.props.answerSize} correct numbers once you click Start`});
 		this.setState({timerVal: 0});
-		let timeout = setInterval(() => {
+		this.timeout = setInterval(() => {
 			this.setState({timerVal: this.state.timerVal + 1});
 			if (this.state.timerVal === 10) {
         this.setState({directionsText: 'Ah, You lost mate! Click start to play again'});
-        clearInterval(timeout);
+        clearInterval(this.timeout);
 			}
 		}, 1000);
 	}
